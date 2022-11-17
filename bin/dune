@@ -1,0 +1,14 @@
+(executables
+ (public_names main client)
+ (names main client)
+ (flags
+  (:standard -short-paths))
+ (libraries
+  core
+  core_unix.command_unix
+  async
+  cohttp_async_websocket
+  tls
+  async_ssl)
+ (preprocess
+  (pps ppx_jane ppx_bench ppx_let)))
