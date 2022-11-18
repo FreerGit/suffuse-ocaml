@@ -1,0 +1,6 @@
+(executables
+ (names main)
+ (modules main)
+ (libraries async core_bench.inline_benchmarks)
+ (preprocess
+  (pps ppx_jane ppx_expect ppx_bench)))

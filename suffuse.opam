@@ -17,10 +17,12 @@ depends: [
   "core"
   "core_bench"
   "cmdliner"
+  "ppx_deriving"
   "ppx_jane"
   "ppx_string"
   "ppx_expect"
   "ppx_bench"
+  "ppx_yojson_conv"
   "odoc" {with-doc}
 ]
 build: [

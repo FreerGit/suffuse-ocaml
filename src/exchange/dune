@@ -1,0 +1,19 @@
+(library
+ (name exchange)
+ (flags
+  (:standard -short-paths))
+ (inline_tests)
+ (library_flags -linkall)
+ (libraries
+  core
+  domain
+  async
+  cohttp_async_websocket
+  core_bench.inline_benchmarks)
+ (preprocess
+  (pps
+   ppx_jane
+   ppx_bench
+   ppx_yojson_conv
+   ppx_deriving.show
+   ppx_deriving.make)))

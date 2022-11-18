@@ -19,7 +19,21 @@
  (name suffuse)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune async cohttp_async_websocket core core_bench cmdliner ppx_jane ppx_string ppx_expect ppx_bench)
+ (depends 
+  ocaml
+  dune
+  async 
+  cohttp_async_websocket 
+  core 
+  core_bench 
+  cmdliner 
+  ppx_deriving 
+  ppx_jane 
+  ppx_string 
+  ppx_expect 
+  ppx_bench 
+  ppx_yojson_conv
+  )
  (tags
   (topics "to describe" your project)))
 

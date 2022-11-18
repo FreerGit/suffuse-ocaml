@@ -2,11 +2,6 @@
  (name suffuse)
  (flags
   (:standard -short-paths))
- (libraries
-  async_ws
-  core
-  core_unix.command_unix
-  async
-  cohttp_async_websocket)
+ (libraries core core_unix.command_unix async cohttp_async_websocket)
  (preprocess
   (pps ppx_jane ppx_bench ppx_let)))
