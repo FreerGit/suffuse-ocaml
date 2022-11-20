@@ -1,10 +1,10 @@
 open! Core
 open! Async
-open! Support
+include Support_intf
 
 module Ws : Support = struct
   open! Cohttp_async_websocket
-
+  
   let url = "wss://stream.bytick.com/realtime_public"
 
   type t =
