@@ -4,7 +4,7 @@ include Support_intf
 
 module Ws : Support = struct
   open! Cohttp_async_websocket
-  
+
   let url = "wss://stream.bytick.com/realtime_public"
 
   type t =
@@ -13,13 +13,15 @@ module Ws : Support = struct
     ; id : int
     }
 
+  let exchange_key = Exchange_Key.Bybit
+
   let connect id =
     match%bind Client.create (Uri.of_string url) with
     | Ok (_resp, reader, writer) -> Deferred.return { reader; writer; id }
     | Error e -> raise_s @@ Error.sexp_of_t e
   ;;
 
-  let subsribe sub t = Pipe.write t.writer sub
+  let subscribe sub t = Pipe.write t.writer sub
 
   let read t =
     match%bind Pipe.read t.reader with
