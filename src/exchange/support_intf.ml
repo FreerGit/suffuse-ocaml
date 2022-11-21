@@ -12,6 +12,7 @@ end
 module type Support = sig
   type t
 
+  val url : string
   val exchange_key : Exchange_Key.t
 
   val connect : int -> t Deferred.t
@@ -19,7 +20,7 @@ module type Support = sig
   val read : t -> (string * int) Deferred.t
 end
 
-module type Ws_instane = sig
+module type Ws_instance = sig
   module Ws : Support
 
   val this : Ws.t
@@ -32,7 +33,7 @@ let connect (type a) (module Ws : Support with type t = a) n =
       module Ws = Ws
 
       let this = this
-    end : Ws_instane)
+    end : Ws_instance)
 ;;
 
 let subscribe (type a) (module Ws : Support with type t = a) url self =
@@ -44,9 +45,14 @@ let subscribe (type a) (module Ws : Support with type t = a) url self =
 
 let build_exchange_dispatch_table handlers =
   let table = Hashtbl.create (module Exchange_Key) in
-  List.iter handlers ~f:(fun ((module I : Ws_instane) as instance) ->
+  List.iter handlers ~f:(fun ((module I : Ws_instance) as instance) ->
     Hashtbl.set table ~key:I.Ws.exchange_key ~data:instance);
   table
 ;;
+
+let dispatch dispatch_table key url =
+  match (Hashtbl.find dispatch_table key) with
+  | None -> raise_s [%message "Unable to find the given exchange in table"]
+  | Some ((module I : Ws_instance)) -> I.Ws.subscribe url I.this
 
 (* val event_loop : (string Pipe.Reader.t * string Pipe.Writer.t) Deferred.t *)
