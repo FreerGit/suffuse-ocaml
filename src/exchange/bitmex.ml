@@ -10,13 +10,13 @@ module Ws : Support = struct
   type t =
     { reader : string Pipe.Reader.t
     ; writer : string Pipe.Writer.t
-    ; id : int
     }
 
   let exchange_key = Exchange_Key.Bitmex
-  let connect id =
+
+  let connect =
     match%bind Client.create (Uri.of_string url) with
-    | Ok (_resp, reader, writer) -> Deferred.return { reader; writer; id }
+    | Ok (_resp, reader, writer) -> Deferred.return { reader; writer }
     | Error e -> raise_s @@ Error.sexp_of_t e
   ;;
 
@@ -25,7 +25,7 @@ module Ws : Support = struct
   let read t =
     match%bind Pipe.read t.reader with
     | `Eof -> raise_s [%sexp "EOF", { reason = "fds" }]
-    | `Ok str -> Deferred.return (str, t.id)
+    | `Ok str -> Deferred.return str
   ;;
 end
 (* let connect =  *)

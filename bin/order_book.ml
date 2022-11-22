@@ -3,33 +3,30 @@ open! Async
 open! Exchange
 open! Support_intf
 
-(* let loopy l =
+let read_loop table supports =
   Clock.run_at_intervals (Time.Span.of_sec 20.0) (fun () ->
-    List.iter l ~f:(fun x -> Bybit.Ws.subsribe "{\"op\":\"ping\"}" x |> don't_wait_for));
-  let rec loop_h l () =
-    let%bind _ = Async.Deferred.List.iter ~how:`Parallel l ~f:(fun x -> 
-      (let%bind (str, id) = Bybit.Ws.read x in
-      printf "@@ %d @@ %s\n" id str;
-      Deferred.return ())
-      ) in 
-    loop_h l ()
-  in
-  Deferred.don't_wait_for (loop_h l ());
-  Deferred.return ()
-;;
-let%bind _ = loopy ws_impls in *)
+    List.iter supports ~f:(
+      fun (module I : Ws_instance) -> 
+        subscribe table I.Ws.exchange_key "{\"op\":\"ping\"}" |> don't_wait_for ));
+    let rec loop () = 
+      let%bind _ = Async.Deferred.List.iter ~how:`Parallel supports ~f:(fun (module I : Ws_instance) -> 
+        let%bind str = I.Ws.read I.this in
+        printf "\027[32m%-8s \027[0m| %s\n" (Exchange_Key.show I.Ws.exchange_key) str;
+        Deferred.return ()
+        ) in
+        loop ()
+      in
+      don't_wait_for (loop ());
+      return ()
 
 let sub () = "{\"op\": \"subscribe\", \"args\": [\"orderBookL2_25.BTCUSDT\"]}"
 
 let run () =
-  (* let open! Exchange in *)
-  let%bind ws_impls = Deferred.all [ connect (module Bybit.Ws) 1; connect (module Bitmex.Ws) 2 ] in
-  print_endline "\nfds";
-  let dispatch_table = build_exchange_dispatch_table ws_impls in 
-  print_endline "here";
-  (* let%bind l = Deferred.all @@ List.init 20 ~f:(fun x -> Bybit.Ws.connect x) in *)
-  let%bind _ = Deferred.all @@ List.map ws_impls ~f:(
-    fun (module I : Ws_instance) -> dispatch dispatch_table I.Ws.exchange_key (sub ())) in
+  let%bind supports = Deferred.all [ connect (module Bybit.Ws); connect (module Bitmex.Ws) ] in
+  let dispatch_table = build_exchange_dispatch_table supports in 
+  let%bind _ = Deferred.all @@ List.map supports ~f:(
+    fun (module I : Ws_instance) -> subscribe dispatch_table I.Ws.exchange_key (sub ())) in
+  let%bind _ = read_loop dispatch_table supports in
   Deferred.never ()
 ;;
 

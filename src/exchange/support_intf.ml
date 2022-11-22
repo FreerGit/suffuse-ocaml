@@ -4,8 +4,8 @@ open! Async
 module Exchange_Key = struct
   type t =
     | Bybit
-    | Bitmex
-  [@@deriving hash, compare, sexp]
+    | Bitmex 
+  [@@deriving hash, compare, sexp, show { with_path = false }]
 end
 (* https://dev.realworldocaml.org/first-class-modules.html#dispatching-to-multiple-query-handlers *)
 
@@ -14,10 +14,9 @@ module type Support = sig
 
   val url : string
   val exchange_key : Exchange_Key.t
-
-  val connect : int -> t Deferred.t
+  val connect : t Deferred.t
   val subscribe : string -> t -> unit Deferred.t
-  val read : t -> (string * int) Deferred.t
+  val read : t -> string Deferred.t
 end
 
 module type Ws_instance = sig
@@ -26,8 +25,8 @@ module type Ws_instance = sig
   val this : Ws.t
 end
 
-let connect (type a) (module Ws : Support with type t = a) n =
-  let%bind this = Ws.connect n in
+let connect (type a) (module Ws : Support with type t = a) =
+  let%bind this = Ws.connect in
   return
     (module struct
       module Ws = Ws
@@ -36,13 +35,6 @@ let connect (type a) (module Ws : Support with type t = a) n =
     end : Ws_instance)
 ;;
 
-let subscribe (type a) (module Ws : Support with type t = a) url self =
-  let%bind u = Ws.subscribe url self in
-  return u
-;;
-
-
-
 let build_exchange_dispatch_table handlers =
   let table = Hashtbl.create (module Exchange_Key) in
   List.iter handlers ~f:(fun ((module I : Ws_instance) as instance) ->
@@ -50,9 +42,15 @@ let build_exchange_dispatch_table handlers =
   table
 ;;
 
-let dispatch dispatch_table key url =
-  match (Hashtbl.find dispatch_table key) with
+let subscribe dispatch_table key url =
+  match Hashtbl.find dispatch_table key with
   | None -> raise_s [%message "Unable to find the given exchange in table"]
-  | Some ((module I : Ws_instance)) -> I.Ws.subscribe url I.this
+  | Some (module I : Ws_instance) -> I.Ws.subscribe url I.this
+;;
+
+let read (type a) (module Ws : Support with type t = a) self =
+  let%bind str = Ws.read self in
+  return str
+;;
 
 (* val event_loop : (string Pipe.Reader.t * string Pipe.Writer.t) Deferred.t *)
